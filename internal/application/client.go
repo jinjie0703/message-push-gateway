@@ -110,13 +110,8 @@ func (c *Client) WritePump() {
 
 	for {
 		select {
-		case message, ok := <-c.send:
+		case message := <-c.send:
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
-			if !ok {
-				// Hub 关闭了 send 通道
-				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
-				return
-			}
 
 			// 发送 JSON 消息
 			if err := c.conn.WriteJSON(message); err != nil {

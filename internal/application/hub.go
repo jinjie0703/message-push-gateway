@@ -106,7 +106,9 @@ func (h *Hub) handleUnregister(client *Client) {
 			delete(h.userConnections, client.UserID)
 		}
 
-		close(client.send)
+		// 方案1：Hub 不关闭 client.send，避免并发广播时 send on closed channel
+		// 通过关闭 websocket 连接让 read/write pump 自然退出。
+		_ = client.conn.Close()
 
 		log.Printf("[Hub] Client unregistered: UserID=%s, Total=%d", client.UserID, len(h.clients))
 	}

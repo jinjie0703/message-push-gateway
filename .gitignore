@@ -15,7 +15,9 @@ dist/
 .go.work.sum
 
 # IDE
-
+.vscode/
+.cursor/
+.kiro/
 .idea/
 
 # OS

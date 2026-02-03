@@ -5,11 +5,14 @@ echo ========================================
 echo.
 
 REM 设置环境变量（可选）
-set JWT_SECRET=WanFang@JWT2024#SecureKey!ChangeInProduction
-set PORT=8080
+REM 建议通过环境变量注入密钥，不要在仓库中硬编码生产密钥。
+REM 示例：
+REM   set JWT_SECRET=CHANGE_ME_IN_PROD
+REM   set PORT=8080
+
+if "%PORT%"=="" set PORT=8080
 
 echo [启动] 正在启动服务器...
-echo [配置] JWT Secret: %JWT_SECRET:~0,10%...
 echo [配置] 端口: %PORT%
 echo.
 

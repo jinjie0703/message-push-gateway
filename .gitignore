@@ -1,0 +1,31 @@
+# Binaries / build output
+bin/
+dist/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Go build artifacts
+*.out
+*.test
+
+# Go workspace
+.go.work
+.go.work.sum
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Env / secrets
+.env
+.env.*
+

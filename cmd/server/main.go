@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	"log"
+	"web_websocket/config"
 	"web_websocket/internal/api"
 	"web_websocket/internal/application"
-	"web_websocket/internal/config"
 )
 
 func main() {

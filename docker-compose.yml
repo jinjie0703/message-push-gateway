@@ -1,0 +1,11 @@
+services:
+  web_ws:
+    build: .
+    image: web_ws:latest
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"
+      JWT_SECRET: "WanFang@JWT2024#SecureKey!ChangeInProduction"
+    restart: unless-stopped
+

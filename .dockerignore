@@ -1,0 +1,59 @@
+# Git / VCS
+.git
+.gitignore
+.gitattributes
+
+# Editor / OS
+.vscode
+.cursor
+.kiro
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Go build outputs / test artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+coverage*
+
+# Common build/cache dirs
+bin/
+dist/
+out/
+build/
+tmp/
+
+# Go workspace / module caches (通常不在项目内，但加上无害)
+.gopath/
+
+# Logs
+*.log
+
+# Secrets / local env files (强烈建议不要进 build context)
+.env
+.env.*
+*.pem
+*.key
+*id_rsa*
+secrets/
+**/secrets/
+
+# Docker / compose / tooling files (避免无关变动导致 COPY . . 失效、context 变大)
+Dockerfile
+docker-compose.yml
+Makefile
+
+# Local scripts & demos that don’t need to go into builder stage
+start_server.bat
+test_ws.html
+
+# If you generate runtime config locally, ignore it as well
+config/*.local.yaml

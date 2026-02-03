@@ -1,0 +1,19 @@
+# Production Environment Configuration
+server:
+  port: 12344
+  mode: release
+
+jwt:
+  secret: "WanFang@JWT2024#SecureKey!ChangeInProduction"
+
+websocket:
+  read_buffer_size: 1024
+  write_buffer_size: 1024
+  ping_period: 54s
+  pong_wait: 60s
+  max_message_size: 512
+
+endpoints:
+  public_base_url: "http://localhost:8080"
+  ws_path: "/ws"
+  alarm_push_path: "/api/push"

@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebSocket 测试工具</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Segoe UI", Arial, sans-serif;
+        background: #f5f5f5;
+        padding: 20px;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 8px 8px 0 0;
+      }
+      .header h1 {
+        font-size: 24px;
+        margin-bottom: 5px;
+      }
+      .header p {
+        opacity: 0.9;
+        font-size: 14px;
+      }
+      .content {
+        padding: 20px;
+      }
+      .section {
+        margin-bottom: 20px;
+      }
+      .section-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 10px;
+        color: #333;
+      }
+      .input-group {
+        margin-bottom: 15px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 14px;
+        color: #666;
+      }
+      input,
+      textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+      input:focus,
+      textarea:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+      .btn-group {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+      }
+      button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+      .btn-primary {
+        background: #667eea;
+        color: white;
+      }
+      .btn-primary:hover {
+        background: #5568d3;
+      }
+      .btn-success {
+        background: #48bb78;
+        color: white;
+      }
+      .btn-success:hover {
+        background: #38a169;
+      }
+      .btn-danger {
+        background: #f56565;
+        color: white;
+      }
+      .btn-danger:hover {
+        background: #e53e3e;
+      }
+      .btn-warning {
+        background: #ed8936;
+        color: white;
+      }
+      .btn-warning:hover {
+        background: #dd6b20;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .status {
+        padding: 10px;
+        border-radius: 4px;
+        margin-bottom: 15px;
+        font-size: 14px;
+      }
+      .status.disconnected {
+        background: #fed7d7;
+        color: #c53030;
+      }
+      .status.connected {
+        background: #c6f6d5;
+        color: #22543d;
+      }
+      .status.connecting {
+        background: #feebc8;
+        color: #7c2d12;
+      }
+      .log-container {
+        background: #1a202c;
+        color: #e2e8f0;
+        padding: 15px;
+        border-radius: 4px;
+        height: 400px;
+        overflow-y: auto;
+        font-family: "Courier New", monospace;
+        font-size: 13px;
+      }
+      .log-entry {
+        margin-bottom: 8px;
+        padding: 5px;
+        border-left: 3px solid transparent;
+      }
+      .log-entry.info {
+        border-color: #4299e1;
+      }
+      .log-entry.success {
+        border-color: #48bb78;
+      }
+      .log-entry.error {
+        border-color: #f56565;
+      }
+      .log-entry.warning {
+        border-color: #ed8936;
+      }
+      .timestamp {
+        color: #a0aec0;
+        margin-right: 10px;
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+      .stat-card {
+        background: #f7fafc;
+        padding: 15px;
+        border-radius: 4px;
+        border-left: 4px solid #667eea;
+      }
+      .stat-label {
+        font-size: 12px;
+        color: #718096;
+        margin-bottom: 5px;
+      }
+      .stat-value {
+        font-size: 24px;
+        font-weight: 600;
+        color: #2d3748;
+      }
+      .subscribed-list {
+        background: #f7fafc;
+        padding: 10px;
+        border-radius: 4px;
+        margin-top: 10px;
+        min-height: 40px;
+      }
+      .subscribed-tag {
+        display: inline-block;
+        background: #667eea;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 3px;
+        margin: 5px;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🔌 WebSocket 测试工具</h1>
+        <p>工地实时推送系统 - 前端连接测试</p>
+      </div>
+
+      <div class="content">
+        <!-- 连接状态 -->
+        <div id="status" class="status disconnected">⚫ 未连接</div>
+
+        <!-- 统计信息 -->
+        <div class="stats">
+          <div class="stat-card">
+            <div class="stat-label">已发送消息</div>
+            <div class="stat-value" id="sentCount">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">已接收消息</div>
+            <div class="stat-value" id="receivedCount">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">连接时长</div>
+            <div class="stat-value" id="duration">00:00</div>
+          </div>
+        </div>
+
+        <!-- 连接配置 -->
+        <div class="section">
+          <div class="section-title">连接配置</div>
+          <div class="input-group">
+            <label>WebSocket URL</label>
+            <input
+              type="text"
+              id="wsUrl"
+              value="ws://localhost:8080/ws"
+              placeholder="ws://localhost:8080/ws"
+            />
+          </div>
+          <div class="input-group">
+            <label>JWT Token（从后端项目获取）</label>
+            <input
+              type="text"
+              id="token"
+              placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            />
+          </div>
+          <div class="btn-group">
+            <button class="btn-primary" id="connectBtn" onclick="connect()">
+              连接
+            </button>
+            <button
+              class="btn-danger"
+              id="disconnectBtn"
+              onclick="disconnect()"
+              disabled
+            >
+              断开
+            </button>
+          </div>
+        </div>
+
+        <!-- 订阅管理 -->
+        <div class="section">
+          <div class="section-title">订阅管理（Project IDs）</div>
+          <div class="input-group">
+            <label>项目ID（多个用逗号分隔，如：project_001,project_002）</label>
+            <input
+              type="text"
+              id="projectIds"
+              value="project_001"
+              placeholder="project_001,project_002"
+            />
+          </div>
+          <div class="btn-group">
+            <button
+              class="btn-success"
+              onclick="subscribe()"
+              disabled
+              id="subscribeBtn"
+            >
+              订阅项目
+            </button>
+            <button
+              class="btn-warning"
+              onclick="unsubscribe()"
+              disabled
+              id="unsubscribeBtn"
+            >
+              取消订阅
+            </button>
+          </div>
+          <div class="input-group">
+            <label>已订阅的项目</label>
+            <div class="subscribed-list" id="subscribedList">
+              <span style="color: #a0aec0; font-size: 14px">暂无订阅</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 测试推送（自导自演） -->
+        <div class="section">
+          <div class="section-title">测试推送（自导自演）</div>
+
+          <div class="input-group">
+            <label>HTTP Base URL</label>
+            <input
+              type="text"
+              id="httpBaseUrl"
+              value="http://localhost:8080"
+              placeholder="http://localhost:8080"
+            />
+          </div>
+
+          <div class="input-group">
+            <label>ProjectID（要与订阅一致）</label>
+            <input type="text" id="testProjectId" value="project_001" />
+          </div>
+
+          <div class="input-group">
+            <label>Type</label>
+            <input type="text" id="testType" value="gps" />
+          </div>
+
+          <div class="input-group">
+            <label>SourceID</label>
+            <input type="text" id="testSourceId" value="device_01" />
+          </div>
+
+          <div class="input-group">
+            <label>Data（JSON，会作为 PushMessage.data 透传）</label>
+            <textarea
+              id="testData"
+              rows="6"
+              placeholder='{"lat":31.23,"lng":121.47}'
+            >{"lat":31.23,"lng":121.47}</textarea>
+          </div>
+
+          <div class="btn-group">
+            <button class="btn-success" onclick="sendTestPushGet()">
+              GET /api/test/push（后端生成 data）
+            </button>
+            <button class="btn-primary" onclick="sendTestPushPost()">
+              POST /api/push（使用上面 data）
+            </button>
+          </div>
+        </div>
+
+        <!-- 消息日志 -->
+        <div class="section">
+          <div class="section-title">消息日志</div>
+          <div class="log-container" id="log"></div>
+          <div class="btn-group" style="margin-top: 10px">
+            <button class="btn-warning" onclick="clearLog()">清空日志</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let ws = null;
+      let sentCount = 0;
+      let receivedCount = 0;
+      let connectTime = null;
+      let durationInterval = null;
+      let subscribedProjects = new Set(); // 追踪已订阅的项目
+
+      function log(message, type = "info") {
+        const logDiv = document.getElementById("log");
+        const timestamp = new Date().toLocaleTimeString("zh-CN", {
+          hour12: false,
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
+        const entry = document.createElement("div");
+        entry.className = `log-entry ${type}`;
+        entry.innerHTML = `<span class="timestamp">[${timestamp}]</span>${message}`;
+        logDiv.appendChild(entry);
+        logDiv.scrollTop = logDiv.scrollHeight;
+      }
+
+      function updateStatus(status, text) {
+        const statusDiv = document.getElementById("status");
+        statusDiv.className = `status ${status}`;
+        const icons = { disconnected: "⚫", connecting: "🟡", connected: "🟢" };
+        statusDiv.textContent = `${icons[status]} ${text}`;
+      }
+
+      function updateButtons(connected) {
+        document.getElementById("connectBtn").disabled = connected;
+        document.getElementById("disconnectBtn").disabled = !connected;
+        document.getElementById("subscribeBtn").disabled = !connected;
+        document.getElementById("unsubscribeBtn").disabled = !connected;
+      }
+
+      function updateSubscribedList() {
+        const listDiv = document.getElementById("subscribedList");
+        if (subscribedProjects.size === 0) {
+          listDiv.innerHTML =
+            '<span style="color: #a0aec0; font-size: 14px;">暂无订阅</span>';
+        } else {
+          listDiv.innerHTML = Array.from(subscribedProjects)
+            .map((id) => `<span class="subscribed-tag">${id}</span>`)
+            .join("");
+        }
+      }
+
+      function updateDuration() {
+        if (!connectTime) return;
+        const seconds = Math.floor((Date.now() - connectTime) / 1000);
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        document.getElementById("duration").textContent =
+          `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+      }
+
+      function connect() {
+        const url = document.getElementById("wsUrl").value.trim();
+        const token = document.getElementById("token").value.trim();
+
+        if (!token) {
+          alert("请输入 JWT Token！");
+          return;
+        }
+
+        const wsUrlWithToken = `${url}?token=${token}`;
+
+        updateStatus("connecting", "连接中...");
+        log(`正在连接: ${url}`, "info");
+
+        try {
+          ws = new WebSocket(wsUrlWithToken);
+
+          ws.onopen = () => {
+            updateStatus("connected", "已连接");
+            updateButtons(true);
+            connectTime = Date.now();
+            durationInterval = setInterval(updateDuration, 1000);
+            log("✅ WebSocket 连接成功！", "success");
+          };
+
+          ws.onmessage = (event) => {
+            receivedCount++;
+            document.getElementById("receivedCount").textContent =
+              receivedCount;
+
+            try {
+              const data = JSON.parse(event.data);
+              log(
+                `📨 收到消息: <br><pre>${JSON.stringify(data, null, 2)}</pre>`,
+                "success",
+              );
+            } catch (e) {
+              log(`📨 收到消息: ${event.data}`, "success");
+            }
+          };
+
+          ws.onerror = (error) => {
+            log(`❌ 连接错误: ${error.message || "未知错误"}`, "error");
+          };
+
+          ws.onclose = (event) => {
+            updateStatus("disconnected", "未连接");
+            updateButtons(false);
+            clearInterval(durationInterval);
+            connectTime = null;
+            subscribedProjects.clear();
+            updateSubscribedList();
+            log(
+              `🔌 连接已关闭 (Code: ${event.code}, Reason: ${event.reason || "无"})`,
+              "warning",
+            );
+          };
+        } catch (error) {
+          log(`❌ 连接失败: ${error.message}`, "error");
+          updateStatus("disconnected", "未连接");
+        }
+      }
+
+      function disconnect() {
+        if (ws) {
+          ws.close();
+          ws = null;
+        }
+      }
+
+      function subscribe() {
+        const projectIds = document
+          .getElementById("projectIds")
+          .value.trim()
+          .split(",")
+          .map((t) => t.trim())
+          .filter((t) => t);
+
+        if (projectIds.length === 0) {
+          alert("请输入至少一个项目ID！");
+          return;
+        }
+
+        // 注意：这里改成 project_ids
+        const message = {
+          action: "subscribe",
+          project_ids: projectIds,
+        };
+
+        ws.send(JSON.stringify(message));
+        sentCount++;
+        document.getElementById("sentCount").textContent = sentCount;
+
+        // 添加到已订阅列表
+        projectIds.forEach((id) => subscribedProjects.add(id));
+        updateSubscribedList();
+
+        log(`📤 订阅项目: ${projectIds.join(", ")}`, "info");
+        log(
+          `发送的JSON: <br><pre>${JSON.stringify(message, null, 2)}</pre>`,
+          "info",
+        );
+      }
+
+      function unsubscribe() {
+        const projectIds = document
+          .getElementById("projectIds")
+          .value.trim()
+          .split(",")
+          .map((t) => t.trim())
+          .filter((t) => t);
+
+        if (projectIds.length === 0) {
+          alert("请输入至少一个项目ID！");
+          return;
+        }
+
+        // 注意：这里改成 project_ids
+        const message = {
+          action: "unsubscribe",
+          project_ids: projectIds,
+        };
+
+        ws.send(JSON.stringify(message));
+        sentCount++;
+        document.getElementById("sentCount").textContent = sentCount;
+
+        // 从已订阅列表移除
+        projectIds.forEach((id) => subscribedProjects.delete(id));
+        updateSubscribedList();
+
+        log(`📤 取消订阅项目: ${projectIds.join(", ")}`, "warning");
+        log(
+          `发送的JSON: <br><pre>${JSON.stringify(message, null, 2)}</pre>`,
+          "warning",
+        );
+      }
+
+      function incSent() {
+        sentCount++;
+        document.getElementById("sentCount").textContent = sentCount;
+      }
+
+      async function sendTestPushGet() {
+        const base = document.getElementById("httpBaseUrl").value.trim();
+        const projectID = document.getElementById("testProjectId").value.trim();
+        const type = document.getElementById("testType").value.trim();
+        const sourceID = document.getElementById("testSourceId").value.trim();
+
+        if (!base) {
+          alert("请输入 HTTP Base URL！");
+          return;
+        }
+        if (!projectID || !type || !sourceID) {
+          alert("请填写 project_id / type / source_id！");
+          return;
+        }
+
+        const url = `${base.replace(/\/$/, "")}/api/test/push?project_id=${encodeURIComponent(projectID)}&type=${encodeURIComponent(type)}&source_id=${encodeURIComponent(sourceID)}`;
+
+        log(`🧪 触发测试推送(GET): ${url}`, "info");
+
+        try {
+          const resp = await fetch(url, { method: "GET" });
+          const text = await resp.text();
+          if (!resp.ok) {
+            log(`❌ 测试推送失败(GET): HTTP ${resp.status}<br><pre>${text}</pre>`, "error");
+            return;
+          }
+
+          incSent();
+
+          try {
+            const json = JSON.parse(text);
+            log(`✅ 测试推送成功(GET) 响应: <br><pre>${JSON.stringify(json, null, 2)}</pre>`, "success");
+          } catch {
+            log(`✅ 测试推送成功(GET) 响应: <br><pre>${text}</pre>`, "success");
+          }
+        } catch (e) {
+          log(`❌ 测试推送异常(GET): ${e.message}`, "error");
+        }
+      }
+
+      async function sendTestPushPost() {
+        const base = document.getElementById("httpBaseUrl").value.trim();
+        const projectID = document.getElementById("testProjectId").value.trim();
+        const type = document.getElementById("testType").value.trim();
+        const sourceID = document.getElementById("testSourceId").value.trim();
+        const dataText = document.getElementById("testData").value.trim();
+
+        if (!base) {
+          alert("请输入 HTTP Base URL！");
+          return;
+        }
+        if (!projectID || !type || !sourceID) {
+          alert("请填写 project_id / type / source_id！");
+          return;
+        }
+        if (!dataText) {
+          alert("请输入 data JSON！");
+          return;
+        }
+
+        let dataObj;
+        try {
+          dataObj = JSON.parse(dataText);
+        } catch (e) {
+          alert("Data 不是合法 JSON！");
+          return;
+        }
+
+        const url = `${base.replace(/\/$/, "")}/api/push`;
+        const payload = {
+          project_id: projectID,
+          type,
+          source_id: sourceID,
+          data: dataObj,
+        };
+
+        log(`🧪 触发测试推送(POST): ${url}`, "info");
+        log(`发送的JSON: <br><pre>${JSON.stringify(payload, null, 2)}</pre>`, "info");
+
+        try {
+          const resp = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const text = await resp.text();
+          if (!resp.ok) {
+            log(`❌ 测试推送失败(POST): HTTP ${resp.status}<br><pre>${text}</pre>`, "error");
+            return;
+          }
+
+          incSent();
+
+          try {
+            const json = JSON.parse(text);
+            log(`✅ 测试推送成功(POST) 响应: <br><pre>${JSON.stringify(json, null, 2)}</pre>`, "success");
+          } catch {
+            log(`✅ 测试推送成功(POST) 响应: <br><pre>${text}</pre>`, "success");
+          }
+        } catch (e) {
+          log(`❌ 测试推送异常(POST): ${e.message}`, "error");
+        }
+      }
+
+      function clearLog() {
+        document.getElementById("log").innerHTML = "";
+        sentCount = 0;
+        receivedCount = 0;
+        document.getElementById("sentCount").textContent = "0";
+        document.getElementById("receivedCount").textContent = "0";
+      }
+
+      // 页面加载完成
+      log("🚀 WebSocket 测试工具已就绪", "info");
+      log("💡 提示：请先从后端项目获取有效的 JWT Token", "info");
+      log("📋 消息格式说明：", "info");
+      log(
+        '   订阅: { "action": "subscribe", "project_ids": ["project_001"] }',
+        "info",
+      );
+      log(
+        '   推送: { "type": "...", "project_id": "...", "source_id": "...", "ts": 123, "data": {...} }',
+        "info",
+      );
+    </script>
+  </body>
+</html>
